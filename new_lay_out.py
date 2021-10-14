@@ -16,7 +16,17 @@ st.set_page_config(
     layout = 'wide'
 )
 
-st.markdown("## Dashbopard")
+# def _max_width_(prcnt_width:int = 50):
+#     max_width_str = f"max-width: {prcnt_width}%;"
+#     st.markdown(f"""
+#                 <style>
+#                 .reportview-container .main .block-container{{{max_width_str}}}
+#                 </style>
+#                 """,
+#                 unsafe_allow_html=True,
+#     )
+
+st.markdown("## Dashboard")
 my_expander = st.expander("Procentuele toename electrische auto's", expanded=True)
 
 with my_expander:
@@ -48,7 +58,7 @@ with my_expander1:
     with kpi01:
         st.markdown("**Aantal laadpaal locaties in Nederland**")
         unumber1 = 7787
-        st.markdown(f"<h1 style='text-align: center; color: white;'>{number1}</h1>", unsafe_allow_html=True)
+        st.markdown(f"<h1 style='text-align: center; color: white;'>{unumber1}</h1>", unsafe_allow_html=True)
 
     with kpi02:
         st.markdown("**Aantal laadpalen in Nederland**")
@@ -108,13 +118,13 @@ with uchart1:
         elif type == 'Seeland':
             return 'aqua'
         elif type == 'Utrecht':
-            return 'Navy'
+            return 'lightblue'
         elif type == 'UT':
-            return 'navy'
+            return 'lightblue'
         elif type == 'UTRECHT':
-            return 'navy'
+            return 'lightblue'
         elif type == 'Limburg':
-            return 'red'
+            return 'pink'
 
             # In[8]:
 
@@ -130,7 +140,7 @@ with uchart1:
     # st.text("Op deze kaart worden de laadpalen weergegeven uit de dataframe. De laadpalen zijn groepeerd per provincie,
     # dankzij de kleuren legenda kan je in één oogopslag zien welke kleur bij welke provincie hoort. Hier is terug te zien dat de meeste laadpalen zich bevinden in de randstad. Dit is ook niet zo gek want het voornaamste gedeelte van de bevolking woont in de randstad.")
 
-    m = folium.Map(location=[52.0907374, 5.1214209], zoom_start=7.5)
+    m = folium.Map(location=[52.0907374, 5.1214209], zoom_start=7.5, tiles='cartodbdark_matter')
 
     for Town in gdf.iterrows():
         row_values = Town[1]
@@ -146,6 +156,7 @@ with uchart1:
 
     #  ik heb een functie gevonden op het internet voor het toevoegen van een categorische legenda:
     # (bron: https://stackoverflow.com/questions/65042654/how-to-add-categorical-legend-to-python-folium-map)
+
 
     def add_categorical_legend(folium_map, title, colors, labels):
         if len(colors) != len(labels):
@@ -297,7 +308,8 @@ with uchart2:
                        text="Mediaan tijd om op te laden",
                        showarrow=True, ay=-80)
 
-    fig.update_layout(barmode='overlay')
+    fig.update_layout(barmode='overlay',
+                      autosize=False, width=800, height=550)
     fig.update_traces(opacity=0.75)
 
     # titels en astitels
@@ -307,28 +319,43 @@ with uchart2:
 
     st.plotly_chart(fig)
 
-chart1, chart2 = st.columns(2)
+chart1 = st.container()
+chart2 = st.container()
 
 with chart1:
     path_clean = '/Users/rubenwiedijk/PycharmProjects/VA_opdracht/dashboard/data_clean'
 
     os.chdir(path_clean)
 
-    diesel_per_month = pd.read_csv('diesel_per_month.csv')
-    benzine_per_month = pd.read_csv('bezine_per_month.csv')
+    diesel_per_month = pd.read_csv('diesel_per_month.csv', index_col='datum_tenaamstelling')
+    benzine_per_month = pd.read_csv('bezine_per_month.csv', index_col='datum_tenaamstelling')
+
+    option = st.selectbox('How would you like to be contacted?',
+                          ('brandstofverbruik_gecombineerd',
+       'brandstofverbruik_stad', 'brandstofverbruik_buiten', 'co2_uitstoot_gecombineerd',
+       'emissie_co2_gecombineerd_wltp', 'brandstof_verbruik_gecombineerd_wltp'))
+
+    description = {'brandstofverbruik_gecombineerd': 'Het brandstofverbruik in l/100 km, tijdens een combinatie van gestandaardiseerde stadsrit- en rit buiten de stad, getest op een rollenbank.',
+                    'brandstofverbruik_stad':'Het brandstofverbruik in l/100 km, tijdens een gestandaardiseerde stadsritcyclus, getest op een rollenbank.',
+                   'brandstofverbruik_buiten':'Het brandstofverbruik in l/100 km, tijdens een gestandaardiseerde rit buiten de stad, getest op een rollenbank.',
+                   'co2_uitstoot_gecombineerd': 'De gewogen uitstoot van CO2 in g/km van een plug-in hybride voertuig, tijdens een combinatie van een stadsrit en een rit buiten de stad, getest op een rollenbank. De waarde is berekend aan de hand van de uitstoot die ontstaat door eenmaal met lege accu’s en eenmaal met volle accu’s te rijden.',
+                   'emissie_co2_gecombineerd_wltp': 'CO2 uitstoot gemeten bij een op een rollenbank rijdend voertuig tijdens een rit volgens de WLTP test onder gecombineerde belasting.',
+                   'brandstof_verbruik_gecombineerd_wltp':'Gewogen brandstofverbruik gemeten bij een op een rollenbank rijdend voertuig tijdens een rit volgens de WLTP test onder gecombineerde belasting.'}
+    st.write(description[option])
 
     fig = go.Figure()
 
     fig.add_trace(
-        go.Scatter(x=benzine_per_month.index, y=benzine_per_month['brandstofverbruik_gecombineerd'], name='Benzine'))
+        go.Scatter(x=benzine_per_month.index, y=benzine_per_month[option], name='Benzine'))
     fig.add_trace(
-        go.Scatter(x=diesel_per_month.index, y=diesel_per_month['brandstofverbruik_gecombineerd'], name='Diesel'))
+        go.Scatter(x=diesel_per_month.index, y=diesel_per_month[option], name='Diesel'))
 
     fig.update_xaxes(range=[diesel_per_month.index.min(), diesel_per_month.index.max()])
 
     fig.update_xaxes(title='Datum')
-    fig.update_yaxes(title='Brandstofverbruik (L per 100 km)')
-    fig.update_layout(title='Brandstofverbruik benzine en diesel over tijd')
+    fig.update_yaxes(title= option)
+    fig.update_layout(title='Verbuik van benzine en diesel over tijd',
+                      autosize=False, width=1300, height=500)
 
     st.plotly_chart(fig)
 
@@ -344,8 +371,10 @@ with chart2:
     for column in cumsum_sales.columns:
         fig.add_trace(go.Scatter(x=cumsum_sales.index, y=cumsum_sales[column], name=column))
 
+    fig.update_xaxes(range=['2017-01-01', diesel_per_month.index[-1]])
     fig.update_xaxes(title='Jaar')
     fig.update_yaxes(title='Aantal')
-    fig.update_layout(title='Verkoop autos per merk')
+    fig.update_layout(title='Verkoop autos per merk',
+                      autosize=False, width=1300, height=500)
 
     st.plotly_chart(fig)
